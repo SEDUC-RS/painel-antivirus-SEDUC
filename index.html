@@ -1,0 +1,2587 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Painel de Gestão de Atualização - SEDUC</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Configuração visual -->
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+
+            theme: {
+                extend: {
+                    colors: {
+                        'rs-verde': '#00843D',
+                        'rs-verde-escuro': '#006B31',
+                        'rs-vermelho': '#C8102E',
+                        'rs-amarelo': '#FFC72C'
+                    }
+                }
+            }
+        };
+
+        /*
+         * Tema inicial.
+         *
+         * Modo escuro é o padrão.
+         * Se o usuário já escolheu um tema anteriormente,
+         * essa escolha será respeitada.
+         */
+        (function () {
+
+            try {
+
+                const salvo =
+                    localStorage.getItem('painel_tema');
+
+                if (salvo) {
+
+                    if (salvo === 'escuro') {
+
+                        document.documentElement
+                            .classList
+                            .add('dark');
+                    }
+
+                } else {
+
+                    // Modo escuro como padrão
+
+                    document.documentElement
+                        .classList
+                        .add('dark');
+                }
+
+            } catch (e) {
+
+                document.documentElement
+                    .classList
+                    .add('dark');
+            }
+
+        })();
+    </script>
+
+    <!-- SheetJS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+</head>
+
+
+<body
+    class="bg-slate-100 dark:bg-slate-950 min-h-screen p-6 font-sans transition-colors duration-300"
+>
+
+    <div class="max-w-7xl mx-auto space-y-6">
+
+
+        <!-- ========================================================= -->
+        <!-- CABEÇALHO -->
+        <!-- ========================================================= -->
+
+        <div
+            class="bg-white dark:bg-slate-900 rounded-xl shadow-md overflow-hidden border border-transparent dark:border-slate-800"
+        >
+
+            <!-- Faixa com as cores do Rio Grande do Sul -->
+
+            <div class="h-2 flex">
+
+                <span class="flex-1 bg-rs-verde"></span>
+
+                <span class="flex-1 bg-rs-vermelho"></span>
+
+                <span class="flex-1 bg-rs-amarelo"></span>
+
+            </div>
+
+
+            <div
+                class="p-6 flex flex-col lg:flex-row justify-between items-center gap-4"
+            >
+
+                <!-- Nome do projeto -->
+
+                <div class="w-full lg:w-1/3">
+
+                    <label
+                        class="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1"
+                    >
+                        Nome do Projeto / Planilha
+                    </label>
+
+                    <input
+                        type="text"
+                        id="projectName"
+                        value="Controle Antivírus e Windows 2026 - SEDUC"
+                        class="text-2xl font-bold text-rs-verde dark:text-rs-amarelo w-full border-b-2 border-slate-300 dark:border-slate-700 focus:border-rs-vermelho outline-none transition py-1 bg-transparent"
+                    >
+
+                </div>
+
+
+                <!-- Botões -->
+
+                <div
+                    class="flex flex-wrap items-center gap-3 w-full lg:w-auto justify-end"
+                >
+
+                    <!-- Tema -->
+
+                    <button
+                        id="btnTema"
+                        onclick="alternarTema()"
+                        class="bg-rs-amarelo hover:brightness-95 text-slate-900 font-semibold py-2.5 px-4 rounded-lg shadow-md transition flex items-center gap-2 text-sm whitespace-nowrap"
+                    >
+                        ☀️ Modo claro
+                    </button>
+
+
+                    <!-- Excel -->
+
+                    <button
+                        onclick="exportarExcel()"
+                        class="bg-rs-verde hover:bg-rs-verde-escuro text-white font-semibold py-2.5 px-4 rounded-lg shadow-md transition flex items-center gap-2 text-sm"
+                    >
+
+                        <svg
+                            class="w-4 h-4"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                        >
+
+                            <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                stroke-width="2"
+                                d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                            >
+
+                            </path>
+
+                        </svg>
+
+                        Exportar Excel
+
+                    </button>
+
+
+                    <!-- CSV -->
+
+                    <button
+                        onclick="exportarCSV()"
+                        class="bg-rs-vermelho hover:brightness-90 text-white font-semibold py-2.5 px-4 rounded-lg shadow-md transition flex items-center gap-2 text-sm"
+                    >
+                        Exportar CSV
+                    </button>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+
+        <!-- ========================================================= -->
+        <!-- CARDS -->
+        <!-- ========================================================= -->
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+
+
+            <!-- Total -->
+
+            <div
+                class="bg-white dark:bg-slate-900 p-5 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 border-l-4 border-l-rs-verde"
+            >
+
+                <p
+                    class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider"
+                >
+                    Total de Máquinas
+                </p>
+
+                <p
+                    class="text-3xl font-black text-rs-verde dark:text-emerald-400 mt-1"
+                    id="cardTotal"
+                >
+                    0
+                </p>
+
+            </div>
+
+
+
+            <!-- Windows -->
+
+            <div
+                class="bg-white dark:bg-slate-900 p-5 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 border-l-4 border-l-rs-amarelo"
+            >
+
+                <p
+                    class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider"
+                >
+                    Windows Atualizado
+                </p>
+
+                <div class="flex items-baseline justify-between mt-1">
+
+                    <p
+                        class="text-3xl font-black text-yellow-600 dark:text-rs-amarelo"
+                        id="cardWinCount"
+                    >
+                        0
+                    </p>
+
+                    <span
+                        class="text-xs font-bold text-yellow-600 dark:text-rs-amarelo"
+                        id="cardWinPct"
+                    >
+                        0%
+                    </span>
+
+                </div>
+
+            </div>
+
+
+
+            <!-- Antivírus -->
+
+            <div
+                class="bg-white dark:bg-slate-900 p-5 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 border-l-4 border-l-rs-vermelho"
+            >
+
+                <p
+                    class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider"
+                >
+                    Antivírus Instalado
+                </p>
+
+                <div class="flex items-baseline justify-between mt-1">
+
+                    <p
+                        class="text-3xl font-black text-rs-vermelho dark:text-red-400"
+                        id="cardAvCount"
+                    >
+                        0
+                    </p>
+
+                    <span
+                        class="text-xs font-bold text-rs-vermelho dark:text-red-400"
+                        id="cardAvPct"
+                    >
+                        0%
+                    </span>
+
+                </div>
+
+            </div>
+
+
+
+            <!-- Concluídos -->
+
+            <div
+                class="bg-white dark:bg-slate-900 p-5 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 border-l-4 border-l-rs-verde"
+            >
+
+                <p
+                    class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider"
+                >
+                    100% Concluídos
+                </p>
+
+                <div class="flex items-baseline justify-between mt-1">
+
+                    <p
+                        class="text-3xl font-black text-rs-verde dark:text-emerald-400"
+                        id="cardBothCount"
+                    >
+                        0
+                    </p>
+
+                    <span
+                        class="text-xs font-bold text-rs-verde dark:text-emerald-400"
+                        id="cardBothPct"
+                    >
+                        0%
+                    </span>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+
+        <!-- ========================================================= -->
+        <!-- PESQUISA -->
+        <!-- ========================================================= -->
+
+        <div
+            class="bg-white dark:bg-slate-900 p-4 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800"
+        >
+
+            <input
+                type="text"
+                id="searchInput"
+                onkeyup="filtrarTabela()"
+                placeholder="🔍 Pesquisar por SEDUC/Aba ou nome de máquina..."
+                class="w-full px-4 py-2.5 border border-slate-300 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:placeholder-slate-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-rs-verde text-slate-700 text-sm"
+            >
+
+        </div>
+
+
+
+        <!-- ========================================================= -->
+        <!-- TABELA -->
+        <!-- ========================================================= -->
+
+        <div
+            class="bg-white dark:bg-slate-900 p-6 rounded-xl shadow-md border border-slate-200 dark:border-slate-800"
+        >
+
+            <div
+                class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-2"
+            >
+
+                <h2
+                    class="text-lg font-bold text-slate-800 dark:text-slate-100"
+                >
+                    Status Geral por Aba / Setor SEDUC
+                </h2>
+
+                <span
+                    class="text-xs text-slate-500 dark:text-slate-400"
+                >
+                    Clique em "Gerenciar Máquinas" para alterar o status individual de cada máquina.
+                </span>
+
+            </div>
+
+
+            <div
+                class="overflow-x-auto max-h-[450px] rounded-lg border border-slate-200 dark:border-slate-800"
+            >
+
+                <table class="w-full text-left border-collapse text-sm">
+
+                    <thead
+                        class="sticky top-0 bg-rs-verde-escuro text-white z-10 border-b-4 border-rs-amarelo"
+                    >
+
+                        <tr>
+
+                            <th class="p-3">
+                                Nome da Aba / Setor
+                            </th>
+
+                            <th class="p-3 text-center">
+                                Total Máquinas
+                            </th>
+
+                            <th class="p-3 text-center">
+                                Windows OK
+                            </th>
+
+                            <th class="p-3 text-center">
+                                Antivírus OK
+                            </th>
+
+                            <th class="p-3 text-center">
+                                Progresso
+                            </th>
+
+                            <th class="p-3 text-center">
+                                Ação
+                            </th>
+
+                        </tr>
+
+                    </thead>
+
+
+                    <tbody
+                        id="tableBody"
+                        class="divide-y divide-slate-200 dark:divide-slate-800 text-slate-700 dark:text-slate-200"
+                    >
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </div>
+
+
+
+        <!-- ========================================================= -->
+        <!-- DETALHES -->
+        <!-- ========================================================= -->
+
+        <div
+            id="sectionDetails"
+            class="bg-white dark:bg-slate-900 p-6 rounded-xl shadow-md border border-slate-200 dark:border-slate-800 hidden"
+        >
+
+            <div
+                class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 border-b border-slate-200 dark:border-slate-800 pb-3 gap-2"
+            >
+
+                <div>
+
+                    <h3
+                        class="text-lg font-bold text-slate-800 dark:text-slate-100"
+                    >
+
+                        Gerenciar Máquinas:
+
+                        <span
+                            id="selectedSheetName"
+                            class="text-rs-vermelho dark:text-rs-amarelo"
+                        >
+                        </span>
+
+                    </h3>
+
+                    <p
+                        class="text-xs text-slate-500 dark:text-slate-400"
+                    >
+                        Clique nos botões individuais abaixo para atualizar a situação conforme você instala/atualiza.
+                    </p>
+
+                </div>
+
+
+                <div class="flex items-center gap-2 flex-wrap">
+
+                    <button
+                        onclick="marcarTudoAba(true)"
+                        class="text-xs bg-rs-verde/15 hover:bg-rs-verde/25 text-rs-verde-escuro dark:text-emerald-300 font-bold px-3 py-1.5 rounded transition"
+                    >
+                        ✓ Concluir Tudo Nesta Aba
+                    </button>
+
+
+                    <button
+                        onclick="marcarTudoAba(false)"
+                        class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200 font-bold px-3 py-1.5 rounded transition"
+                    >
+                        ↺ Resetar Aba
+                    </button>
+
+
+                    <button
+                        onclick="fecharDetalhes()"
+                        class="text-slate-500 hover:text-slate-700 dark:text-slate-300 dark:hover:text-white text-sm font-bold bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded transition"
+                    >
+                        ✕ Fechar
+                    </button>
+
+                </div>
+
+            </div>
+
+
+            <div
+                id="machineListContainer"
+                class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-h-96 overflow-y-auto p-3 bg-slate-50 dark:bg-slate-950 rounded-lg border border-slate-200 dark:border-slate-800"
+            >
+            </div>
+
+        </div>
+
+    </div>
+
+
+
+    <!-- ============================================================= -->
+    <!-- JAVASCRIPT -->
+    <!-- ============================================================= -->
+
+    <script>
+
+        let workbookData = [];
+
+        let activeSheetIndex = null;
+
+
+        // ============================================================
+        // CONFIGURAÇÕES
+        // ============================================================
+
+        /*
+         * Arquivo da SEDUC.
+         *
+         * Deve ficar na mesma pasta deste index.html:
+         *
+         * SEDUC.xlsx
+         */
+
+        const ARQUIVO_PLANILHA = "SEDUC.xlsx";
+
+
+        /*
+         * FIREBASE
+         *
+         * É o MESMO Firebase utilizado pelas CRES.
+         *
+         * Porém, a SEDUC utiliza somente:
+         *
+         * /status/SEDUC
+         *
+         * Portanto os dados não se misturam.
+         */
+
+        const FIREBASE_URL =
+            "https://antivirus-14696-default-rtdb.firebaseio.com";
+
+
+        /*
+         * Caminho exclusivo da SEDUC.
+         */
+
+        const FIREBASE_PATH =
+            "/status/SEDUC";
+
+
+        /*
+         * Cache local exclusivo da SEDUC.
+         */
+
+        const LS_KEY =
+            "painel_seduc_status_v1";
+
+
+        /*
+         * Intervalo de sincronização:
+         * 20 segundos.
+         */
+
+        const INTERVALO_SYNC_MS = 20000;
+
+
+        /*
+         * Ordem esperada das abas da SEDUC.
+         *
+         * A planilha pode ter exatamente essa ordem.
+         */
+
+        const ABAS_SEDUC = [
+            "AJU",
+            "PGE",
+            "NGOV",
+            "GAB",
+            "SUPLAN",
+            "SUBGOV",
+            "NCBE",
+            "INFRA",
+            "EDU",
+            "ASIAC",
+            "CEBE",
+            "DTI",
+            "SISE",
+            "SERVIDORES SEDUC"
+        ];
+
+
+        let statusSalvo = {};
+
+
+
+        // ============================================================
+        // TEMA
+        // ============================================================
+
+        function atualizarBotaoTema() {
+
+            const escuro =
+                document.documentElement.classList.contains('dark');
+
+            const btn =
+                document.getElementById('btnTema');
+
+            if (!btn) return;
+
+            btn.innerHTML =
+                escuro
+                    ? '☀️ Modo claro'
+                    : '🌙 Modo escuro';
+        }
+
+
+
+        function alternarTema() {
+
+            const escuro =
+                document.documentElement.classList.toggle('dark');
+
+            try {
+
+                localStorage.setItem(
+                    'painel_tema',
+                    escuro ? 'escuro' : 'claro'
+                );
+
+            } catch (e) {
+
+                console.error(e);
+            }
+
+            atualizarBotaoTema();
+        }
+
+
+
+        // ============================================================
+        // CHAVE DO FIREBASE
+        // ============================================================
+
+        function chave(sheetName, machineName) {
+
+            /*
+             * Cada máquina possui uma chave composta:
+             *
+             * nome da aba + nome da máquina
+             *
+             * Exemplo:
+             *
+             * AJU__PC-001
+             *
+             * PGE__PC-002
+             *
+             * Isso evita conflito caso duas abas
+             * tenham máquinas com o mesmo nome.
+             */
+
+            return (
+                sheetName +
+                "__" +
+                machineName
+            ).replace(
+                /[.$#\[\]\/]/g,
+                "_"
+            );
+        }
+
+
+
+        // ============================================================
+        // LOCAL STORAGE
+        // ============================================================
+
+        function lerLocal() {
+
+            try {
+
+                return JSON.parse(
+                    localStorage.getItem(LS_KEY) || "{}"
+                );
+
+            } catch (e) {
+
+                console.error(
+                    "Erro ao ler localStorage:",
+                    e
+                );
+
+                return {};
+            }
+        }
+
+
+
+        function salvarLocal() {
+
+            try {
+
+                localStorage.setItem(
+                    LS_KEY,
+                    JSON.stringify(statusSalvo)
+                );
+
+            } catch (e) {
+
+                console.error(
+                    "Erro ao salvar localStorage:",
+                    e
+                );
+            }
+        }
+
+
+
+        // ============================================================
+        // URL EXCLUSIVA DA SEDUC NO FIREBASE
+        // ============================================================
+
+        function firebaseStatusUrl() {
+
+            return (
+                FIREBASE_URL.replace(/\/$/, "") +
+                FIREBASE_PATH +
+                ".json"
+            );
+        }
+
+
+
+        // ============================================================
+        // LER FIREBASE
+        // ============================================================
+
+        async function lerRemoto() {
+
+            if (!FIREBASE_URL) {
+
+                throw new Error(
+                    "FIREBASE_URL não configurada."
+                );
+            }
+
+
+            const url =
+                firebaseStatusUrl();
+
+
+            console.log(
+                "🔵 Lendo Firebase SEDUC:",
+                url
+            );
+
+
+            const response =
+                await fetch(
+                    url,
+                    {
+                        method: "GET",
+                        cache: "no-store"
+                    }
+                );
+
+
+            if (!response.ok) {
+
+                const erro =
+                    await response.text();
+
+                throw new Error(
+                    `Firebase HTTP ${response.status}: ${erro}`
+                );
+            }
+
+
+            const dados =
+                await response.json();
+
+
+            console.log(
+                "🟢 Dados SEDUC recebidos do Firebase:",
+                dados
+            );
+
+
+            return dados || {};
+        }
+
+
+
+        // ============================================================
+        // SALVAR FIREBASE
+        // ============================================================
+
+        async function salvarRemoto(alteracoes) {
+
+            if (!FIREBASE_URL) {
+
+                throw new Error(
+                    "FIREBASE_URL não configurada."
+                );
+            }
+
+
+            const url =
+                firebaseStatusUrl();
+
+
+            console.log(
+                "🟡 Salvando SEDUC no Firebase:",
+                alteracoes
+            );
+
+
+            const response =
+                await fetch(
+                    url,
+                    {
+                        method: "PATCH",
+
+                        headers: {
+                            "Content-Type":
+                                "application/json"
+                        },
+
+                        body:
+                            JSON.stringify(
+                                alteracoes
+                            )
+                    }
+                );
+
+
+            if (!response.ok) {
+
+                const erro =
+                    await response.text();
+
+                throw new Error(
+                    `Firebase HTTP ${response.status}: ${erro}`
+                );
+            }
+
+
+            console.log(
+                "🟢 Firebase SEDUC salvou com sucesso."
+            );
+
+
+            return true;
+        }
+
+
+
+        // ============================================================
+        // REGISTRAR STATUS
+        // ============================================================
+
+        async function registrarStatus(
+            sheet,
+            machines
+        ) {
+
+            const alteracoes = {};
+
+
+            machines.forEach(m => {
+
+                const k =
+                    chave(
+                        sheet.sheet_name,
+                        m.name
+                    );
+
+
+                const v = {
+
+                    /*
+                     * w = Windows
+                     */
+
+                    w:
+                        !!m.winUpdated,
+
+
+                    /*
+                     * a = Antivírus
+                     */
+
+                    a:
+                        !!m.antivirusInstalled
+
+                };
+
+
+                statusSalvo[k] = v;
+
+                alteracoes[k] = v;
+
+            });
+
+
+            /*
+             * Salva localmente como cache.
+             */
+
+            salvarLocal();
+
+
+            /*
+             * Salva no Firebase SEDUC.
+             */
+
+            await salvarRemoto(
+                alteracoes
+            );
+        }
+
+
+
+        // ============================================================
+        // APLICAR STATUS SALVO
+        // ============================================================
+
+        function aplicarStatusSalvo() {
+
+            workbookData.forEach(sheet => {
+
+                sheet.machines.forEach(m => {
+
+                    const s =
+                        statusSalvo[
+                            chave(
+                                sheet.sheet_name,
+                                m.name
+                            )
+                        ];
+
+
+                    if (s) {
+
+                        m.winUpdated =
+                            !!s.w;
+
+                        m.antivirusInstalled =
+                            !!s.a;
+                    }
+
+                });
+
+            });
+        }
+
+
+
+        // ============================================================
+        // SINCRONIZAR FIREBASE
+        // ============================================================
+
+        async function sincronizarRemoto() {
+
+            try {
+
+                const remoto =
+                    await lerRemoto();
+
+
+                /*
+                 * O Firebase da SEDUC é a fonte oficial.
+                 */
+
+                statusSalvo =
+                    remoto || {};
+
+
+                /*
+                 * Cache local.
+                 */
+
+                salvarLocal();
+
+
+                /*
+                 * Aplica aos dados da planilha.
+                 */
+
+                aplicarStatusSalvo();
+
+
+                /*
+                 * Atualiza a tela.
+                 */
+
+                atualizarDashboard();
+
+
+            } catch (erro) {
+
+                console.error(
+                    "❌ Erro na sincronização SEDUC:",
+                    erro
+                );
+            }
+        }
+
+
+
+        // ============================================================
+        // DOM READY
+        // ============================================================
+
+        document.addEventListener(
+            "DOMContentLoaded",
+            () => {
+
+                atualizarBotaoTema();
+
+                atualizarDashboard();
+
+                carregarPlanilhaAutomatica();
+
+            }
+        );
+
+
+
+        // ============================================================
+        // CARREGAR PLANILHA
+        // ============================================================
+
+        async function carregarPlanilhaAutomatica() {
+
+            try {
+
+                console.log(
+                    "📂 Carregando SEDUC.xlsx..."
+                );
+
+
+                const resp =
+                    await fetch(
+                        ARQUIVO_PLANILHA +
+                        "?v=" +
+                        Date.now(),
+                        {
+                            cache: "no-store"
+                        }
+                    );
+
+
+                if (!resp.ok) {
+
+                    throw new Error(
+                        "Erro ao carregar " +
+                        ARQUIVO_PLANILHA
+                    );
+                }
+
+
+                const buffer =
+                    await resp.arrayBuffer();
+
+
+                const workbook =
+                    XLSX.read(
+                        new Uint8Array(buffer),
+                        {
+                            type: "array"
+                        }
+                    );
+
+
+                /*
+                 * Extrai TODAS as abas.
+                 *
+                 * Cada aba representa um setor da SEDUC.
+                 */
+
+                const parsedData =
+                    extrairDadosWorkbook(
+                        workbook
+                    );
+
+
+                if (parsedData.length === 0) {
+
+                    throw new Error(
+                        "Nenhuma máquina encontrada na planilha SEDUC.xlsx."
+                    );
+                }
+
+
+                workbookData =
+                    parsedData;
+
+
+                console.log(
+                    "📊 Abas carregadas:",
+                    workbookData
+                );
+
+
+
+                // ====================================================
+                // FIREBASE É A FONTE PRINCIPAL
+                // ====================================================
+
+                try {
+
+                    const remoto =
+                        await lerRemoto();
+
+
+                    /*
+                     * Limpa completamente
+                     * o estado atual.
+                     */
+
+                    statusSalvo = {};
+
+
+                    /*
+                     * Usa SOMENTE o Firebase SEDUC
+                     * como estado oficial.
+                     */
+
+                    Object.assign(
+                        statusSalvo,
+                        remoto || {}
+                    );
+
+
+                    /*
+                     * Cache local.
+                     */
+
+                    salvarLocal();
+
+
+                    console.log(
+                        "✅ Status SEDUC carregados do Firebase:",
+                        Object.keys(
+                            statusSalvo
+                        ).length
+                    );
+
+
+                } catch (erroFirebase) {
+
+                    console.error(
+                        "❌ NÃO FOI POSSÍVEL LER O FIREBASE SEDUC:",
+                        erroFirebase
+                    );
+
+
+                    /*
+                     * Somente se o Firebase
+                     * estiver indisponível,
+                     * usa o cache local.
+                     */
+
+                    statusSalvo =
+                        lerLocal();
+
+
+                    console.warn(
+                        "⚠️ Usando localStorage SEDUC como fallback:",
+                        Object.keys(
+                            statusSalvo
+                        ).length
+                    );
+                }
+
+
+
+                /*
+                 * Aplica o status.
+                 */
+
+                aplicarStatusSalvo();
+
+
+                atualizarDashboard();
+
+
+
+                /*
+                 * Sincronização automática.
+                 */
+
+                if (FIREBASE_URL) {
+
+                    setInterval(
+                        async () => {
+
+                            try {
+
+                                const remoto =
+                                    await lerRemoto();
+
+
+                                /*
+                                 * O Firebase SEDUC
+                                 * continua sendo a
+                                 * fonte oficial.
+                                 */
+
+                                statusSalvo =
+                                    remoto || {};
+
+
+                                salvarLocal();
+
+
+                                aplicarStatusSalvo();
+
+
+                                atualizarDashboard();
+
+                            } catch (erro) {
+
+                                console.error(
+                                    "Erro na sincronização SEDUC:",
+                                    erro
+                                );
+                            }
+
+                        },
+                        INTERVALO_SYNC_MS
+                    );
+                }
+
+
+            } catch (err) {
+
+                console.error(
+                    "❌ Erro geral SEDUC:",
+                    err
+                );
+
+
+                mostrarErroCarga(
+                    "Não foi possível carregar os dados: " +
+                    err.message
+                );
+            }
+        }
+
+
+
+        // ============================================================
+        // ERRO DE CARREGAMENTO
+        // ============================================================
+
+        function mostrarErroCarga(msg) {
+
+            document.getElementById(
+                'tableBody'
+            ).innerHTML =
+
+                `
+                <tr>
+
+                    <td
+                        colspan="6"
+                        class="p-6 text-center text-rs-vermelho dark:text-red-400"
+                    >
+
+                        ${msg}
+
+                    </td>
+
+                </tr>
+                `;
+        }
+
+
+
+        // ============================================================
+        // EXTRAIR EXCEL
+        // ============================================================
+
+        function extrairDadosWorkbook(
+            workbook
+        ) {
+
+            let parsedData = [];
+
+
+            /*
+             * A planilha SEDUC possui as abas:
+             *
+             * AJU
+             * PGE
+             * NGOV
+             * GAB
+             * SUPLAN
+             * SUBGOV
+             * NCBE
+             * INFRA
+             * EDU
+             * ASIAC
+             * CEBE
+             * DTI
+             * SISE
+             * SERVIDORES SEDUC
+             *
+             * Cada máquina está em uma linha
+             * da primeira coluna.
+             */
+
+
+            /*
+             * Primeiro percorremos as abas na ordem
+             * definida pela própria planilha.
+             *
+             * Se a planilha estiver com a ordem informada,
+             * ela será mantida.
+             */
+
+            workbook.SheetNames.forEach(
+                sheetName => {
+
+                    const worksheet =
+                        workbook.Sheets[
+                            sheetName
+                        ];
+
+
+                    if (!worksheet) {
+                        return;
+                    }
+
+
+                    /*
+                     * Lê a aba como matriz.
+                     */
+
+                    const rows =
+                        XLSX.utils.sheet_to_json(
+                            worksheet,
+                            {
+                                header: 1,
+                                defval: ""
+                            }
+                        );
+
+
+                    let machineObjects = [];
+
+
+                    /*
+                     * Cada linha da planilha.
+                     */
+
+                    rows.forEach(row => {
+
+                        if (
+                            !Array.isArray(row) ||
+                            row.length === 0
+                        ) {
+                            return;
+                        }
+
+
+                        /*
+                         * IMPORTANTE:
+                         *
+                         * Na SEDUC, o nome da máquina
+                         * está na PRIMEIRA COLUNA.
+                         */
+
+                        let strName =
+                            row[0]
+                                ? String(
+                                    row[0]
+                                ).trim()
+                                : '';
+
+
+                        /*
+                         * Ignora células vazias.
+                         */
+
+                        if (
+                            strName === ''
+                        ) {
+                            return;
+                        }
+
+
+                        /*
+                         * Ignora possíveis cabeçalhos.
+                         *
+                         * Como a planilha tem somente
+                         * nomes de máquinas, esta proteção
+                         * serve apenas para o caso de existir
+                         * um título na primeira linha.
+                         */
+
+                        const ignorar = [
+                            'host name',
+                            'hostname',
+                            'host',
+                            'maquinas',
+                            'máquinas',
+                            'máquina',
+                            'maquina',
+                            'nome da máquina',
+                            'nome da maquina',
+                            'nome',
+                            'computador',
+                            'computador(es)',
+                            'pc',
+                            'total',
+                            'nome do computador'
+                        ];
+
+
+                        if (
+                            ignorar.includes(
+                                strName.toLowerCase()
+                            )
+                        ) {
+                            return;
+                        }
+
+
+                        /*
+                         * Como cada aba possui somente
+                         * os nomes das máquinas, inicialmente
+                         * Windows e Antivírus ficam pendentes.
+                         *
+                         * Os status reais vêm do Firebase.
+                         */
+
+                        machineObjects.push({
+
+                            name:
+                                strName,
+
+                            winUpdated:
+                                false,
+
+                            antivirusInstalled:
+                                false
+
+                        });
+
+                    });
+
+
+                    /*
+                     * Remove máquinas duplicadas
+                     * dentro da mesma aba.
+                     */
+
+                    let uniqueMap =
+                        new Map();
+
+
+                    machineObjects.forEach(
+                        item => {
+
+                            const nomeNormalizado =
+                                item.name
+                                    .trim()
+                                    .toLowerCase();
+
+
+                            if (
+                                !uniqueMap.has(
+                                    nomeNormalizado
+                                )
+                            ) {
+
+                                uniqueMap.set(
+                                    nomeNormalizado,
+                                    item
+                                );
+                            }
+
+                        }
+                    );
+
+
+                    let uniqueMachines =
+                        Array.from(
+                            uniqueMap.values()
+                        );
+
+
+                    /*
+                     * Se encontrou máquinas,
+                     * adiciona a aba.
+                     */
+
+                    if (
+                        uniqueMachines.length > 0
+                    ) {
+
+                        parsedData.push({
+
+                            sheet_name:
+                                sheetName.trim(),
+
+                            machines:
+                                uniqueMachines
+
+                        });
+                    }
+
+                }
+            );
+
+
+            /*
+             * -------------------------------------------------------
+             * ORDENAÇÃO DAS ABAS
+             * -------------------------------------------------------
+             *
+             * Garante a ordem informada:
+             *
+             * AJU
+             * PGE
+             * NGOV
+             * GAB
+             * SUPLAN
+             * SUBGOV
+             * NCBE
+             * INFRA
+             * EDU
+             * ASIAC
+             * CEBE
+             * DTI
+             * SISE
+             * SERVIDORES SEDUC
+             */
+
+            parsedData.sort(
+                (a, b) => {
+
+                    const ia =
+                        ABAS_SEDUC.indexOf(
+                            a.sheet_name
+                        );
+
+                    const ib =
+                        ABAS_SEDUC.indexOf(
+                            b.sheet_name
+                        );
+
+
+                    /*
+                     * Abas não previstas ficam
+                     * depois das conhecidas.
+                     */
+
+                    const posA =
+                        ia === -1
+                            ? 999
+                            : ia;
+
+                    const posB =
+                        ib === -1
+                            ? 999
+                            : ib;
+
+
+                    return posA - posB;
+                }
+            );
+
+
+            console.log(
+                "✅ SEDUC.xlsx processado:",
+                parsedData
+            );
+
+
+            return parsedData;
+        }
+
+
+
+        // ============================================================
+        // DASHBOARD
+        // ============================================================
+
+        function atualizarDashboard() {
+
+            let total = 0;
+
+            let winCount = 0;
+
+            let avCount = 0;
+
+            let bothCount = 0;
+
+
+            const tbody =
+                document.getElementById(
+                    'tableBody'
+                );
+
+
+            tbody.innerHTML = '';
+
+
+            const input =
+                document
+                    .getElementById(
+                        "searchInput"
+                    )
+                    .value
+                    .toLowerCase()
+                    .trim();
+
+
+            if (
+                workbookData.length === 0
+            ) {
+
+                tbody.innerHTML =
+
+                    `
+                    <tr>
+
+                        <td
+                            colspan="6"
+                            class="p-6 text-center text-slate-400 dark:text-slate-500"
+                        >
+                            Carregando dados da planilha SEDUC...
+                        </td>
+
+                    </tr>
+                    `;
+
+
+                resetCards();
+
+                return;
+            }
+
+
+
+            workbookData.forEach(
+                (sheet, sIdx) => {
+
+                    let sheetTotal =
+                        sheet.machines.length;
+
+
+                    let sheetWin =
+                        sheet.machines.filter(
+                            m => m.winUpdated
+                        ).length;
+
+
+                    let sheetAv =
+                        sheet.machines.filter(
+                            m =>
+                                m.antivirusInstalled
+                        ).length;
+
+
+                    let sheetBoth =
+                        sheet.machines.filter(
+                            m =>
+                                m.winUpdated &&
+                                m.antivirusInstalled
+                        ).length;
+
+
+                    /*
+                     * Pesquisa por:
+                     *
+                     * - Nome da aba
+                     * - Nome da máquina
+                     */
+
+                    const matchSearch =
+
+                        sheet.sheet_name
+                            .toLowerCase()
+                            .includes(input)
+
+                        ||
+
+                        sheet.machines.some(
+                            m =>
+                                m.name
+                                    .toLowerCase()
+                                    .includes(input)
+                        );
+
+
+                    if (matchSearch) {
+
+                        total += sheetTotal;
+
+                        winCount += sheetWin;
+
+                        avCount += sheetAv;
+
+                        bothCount += sheetBoth;
+
+
+                        let pctProgresso =
+                            sheetTotal > 0
+
+                                ? Math.round(
+                                    (
+                                        sheetBoth /
+                                        sheetTotal
+                                    ) * 100
+                                )
+
+                                : 0;
+
+
+                        const tr =
+                            document.createElement(
+                                'tr'
+                            );
+
+
+                        tr.className =
+                            sIdx % 2 === 0
+
+                                ?
+
+                                'bg-white dark:bg-slate-900 hover:bg-rs-amarelo/10 dark:hover:bg-slate-800 transition'
+
+                                :
+
+                                'bg-slate-50 dark:bg-slate-900/70 hover:bg-rs-amarelo/10 dark:hover:bg-slate-800 transition';
+
+
+                        tr.innerHTML =
+
+                            `
+
+                            <td
+                                class="p-3 font-semibold text-slate-800 dark:text-slate-100"
+                            >
+                                ${sheet.sheet_name}
+                            </td>
+
+
+                            <td
+                                class="p-3 text-center font-bold text-slate-700 dark:text-slate-200"
+                            >
+                                ${sheetTotal}
+                            </td>
+
+
+                            <td class="p-3 text-center">
+
+                                <span
+                                    class="px-2 py-1 rounded text-xs font-bold
+                                    ${
+                                        sheetWin === sheetTotal &&
+                                        sheetTotal > 0
+
+                                        ?
+
+                                        'bg-rs-amarelo/40 text-yellow-800 dark:text-rs-amarelo'
+
+                                        :
+
+                                        'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300'
+                                    }"
+                                >
+                                    ${sheetWin} / ${sheetTotal}
+                                </span>
+
+                            </td>
+
+
+                            <td class="p-3 text-center">
+
+                                <span
+                                    class="px-2 py-1 rounded text-xs font-bold
+                                    ${
+                                        sheetAv === sheetTotal &&
+                                        sheetTotal > 0
+
+                                        ?
+
+                                        'bg-rs-verde/15 text-rs-verde-escuro dark:text-emerald-300'
+
+                                        :
+
+                                        'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300'
+                                    }"
+                                >
+                                    ${sheetAv} / ${sheetTotal}
+                                </span>
+
+                            </td>
+
+
+                            <td class="p-3 text-center">
+
+                                <div
+                                    class="w-full bg-slate-200 dark:bg-slate-800 rounded-full h-2.5"
+                                >
+
+                                    <div
+                                        class="bg-rs-verde h-2.5 rounded-full transition-all duration-300"
+                                        style="width: ${pctProgresso}%"
+                                    >
+                                    </div>
+
+                                </div>
+
+
+                                <span
+                                    class="text-[10px] font-semibold text-slate-500 dark:text-slate-400"
+                                >
+                                    ${pctProgresso}%
+                                </span>
+
+                            </td>
+
+
+                            <td class="p-3 text-center">
+
+                                <button
+                                    onclick="verDetalhes(${sIdx})"
+                                    class="px-3 py-1.5 text-xs font-semibold rounded bg-rs-vermelho text-white hover:brightness-90 transition shadow-sm"
+                                >
+                                    Gerenciar Máquinas (${sheetTotal})
+                                </button>
+
+                            </td>
+
+                            `;
+
+
+                        tbody.appendChild(
+                            tr
+                        );
+                    }
+
+                }
+            );
+
+
+
+            // ========================================================
+            // CARDS
+            // ========================================================
+
+            document.getElementById(
+                'cardTotal'
+            ).innerText =
+                total;
+
+
+            document.getElementById(
+                'cardWinCount'
+            ).innerText =
+                winCount;
+
+
+            document.getElementById(
+                'cardWinPct'
+            ).innerText =
+
+                total > 0
+
+                    ? Math.round(
+                        (
+                            winCount /
+                            total
+                        ) * 100
+                    ) + '%'
+
+                    : '0%';
+
+
+            document.getElementById(
+                'cardAvCount'
+            ).innerText =
+                avCount;
+
+
+            document.getElementById(
+                'cardAvPct'
+            ).innerText =
+
+                total > 0
+
+                    ? Math.round(
+                        (
+                            avCount /
+                            total
+                        ) * 100
+                    ) + '%'
+
+                    : '0%';
+
+
+            document.getElementById(
+                'cardBothCount'
+            ).innerText =
+                bothCount;
+
+
+            document.getElementById(
+                'cardBothPct'
+            ).innerText =
+
+                total > 0
+
+                    ? Math.round(
+                        (
+                            bothCount /
+                            total
+                        ) * 100
+                    ) + '%'
+
+                    : '0%';
+
+
+
+            if (
+                activeSheetIndex !== null &&
+                workbookData[
+                    activeSheetIndex
+                ]
+            ) {
+
+                renderizarDetalhesAba(
+                    activeSheetIndex
+                );
+            }
+
+        }
+
+
+
+        // ============================================================
+        // RESET CARDS
+        // ============================================================
+
+        function resetCards() {
+
+            document.getElementById(
+                'cardTotal'
+            ).innerText = '0';
+
+
+            document.getElementById(
+                'cardWinCount'
+            ).innerText = '0';
+
+
+            document.getElementById(
+                'cardWinPct'
+            ).innerText = '0%';
+
+
+            document.getElementById(
+                'cardAvCount'
+            ).innerText = '0';
+
+
+            document.getElementById(
+                'cardAvPct'
+            ).innerText = '0%';
+
+
+            document.getElementById(
+                'cardBothCount'
+            ).innerText = '0';
+
+
+            document.getElementById(
+                'cardBothPct'
+            ).innerText = '0%';
+        }
+
+
+
+        // ============================================================
+        // ABRIR DETALHES
+        // ============================================================
+
+        function verDetalhes(
+            sheetIndex
+        ) {
+
+            activeSheetIndex =
+                sheetIndex;
+
+
+            renderizarDetalhesAba(
+                sheetIndex
+            );
+
+
+            const section =
+                document.getElementById(
+                    'sectionDetails'
+                );
+
+
+            section.classList.remove(
+                'hidden'
+            );
+
+
+            section.scrollIntoView({
+                behavior: 'smooth'
+            });
+        }
+
+
+
+        // ============================================================
+        // RENDERIZAR MÁQUINAS
+        // ============================================================
+
+        function renderizarDetalhesAba(
+            sheetIndex
+        ) {
+
+            const sheet =
+                workbookData[
+                    sheetIndex
+                ];
+
+
+            if (!sheet) return;
+
+
+            document.getElementById(
+                'selectedSheetName'
+            ).innerText =
+                sheet.sheet_name;
+
+
+            const container =
+                document.getElementById(
+                    'machineListContainer'
+                );
+
+
+            container.innerHTML = '';
+
+
+            const pendente =
+                'bg-slate-100 text-slate-500 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700';
+
+
+
+            sheet.machines.forEach(
+                (m, mIdx) => {
+
+                    const card =
+                        document.createElement(
+                            'div'
+                        );
+
+
+                    card.className =
+                        'bg-white dark:bg-slate-900 p-3 rounded-lg border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between gap-2';
+
+
+
+                    card.innerHTML =
+
+                        `
+
+                        <div
+                            class="font-mono font-bold text-slate-800 dark:text-slate-100 text-xs border-b border-slate-200 dark:border-slate-800 pb-1 text-center truncate"
+                            title="${m.name}"
+                        >
+                            🖥️ ${m.name}
+                        </div>
+
+
+                        <div
+                            class="grid grid-cols-2 gap-1.5 mt-1"
+                        >
+
+                            <!-- Windows -->
+
+                            <button
+                                onclick="toggleWin(${sheetIndex}, ${mIdx})"
+                                class="py-1.5 px-2 rounded text-[11px] font-bold transition flex items-center justify-center gap-1 ${
+                                    m.winUpdated
+
+                                    ?
+
+                                    'bg-rs-amarelo text-slate-900 hover:brightness-95'
+
+                                    :
+
+                                    pendente
+                                }"
+                            >
+                                ${
+                                    m.winUpdated
+                                        ? '✓ Windows OK'
+                                        : '⏳ Win Pendente'
+                                }
+                            </button>
+
+
+                            <!-- Antivírus -->
+
+                            <button
+                                onclick="toggleAv(${sheetIndex}, ${mIdx})"
+                                class="py-1.5 px-2 rounded text-[11px] font-bold transition flex items-center justify-center gap-1 ${
+                                    m.antivirusInstalled
+
+                                    ?
+
+                                    'bg-rs-verde text-white hover:bg-rs-verde-escuro'
+
+                                    :
+
+                                    pendente
+                                }"
+                            >
+                                ${
+                                    m.antivirusInstalled
+                                        ? '✓ Antivírus OK'
+                                        : '⏳ AV Pendente'
+                                }
+                            </button>
+
+                        </div>
+
+                        `;
+
+
+                    container.appendChild(
+                        card
+                    );
+
+                }
+            );
+        }
+
+
+
+        // ============================================================
+        // WINDOWS
+        // ============================================================
+
+        async function toggleWin(
+            sIdx,
+            mIdx
+        ) {
+
+            const m =
+                workbookData[
+                    sIdx
+                ].machines[
+                    mIdx
+                ];
+
+
+            m.winUpdated =
+                !m.winUpdated;
+
+
+            /*
+             * Atualiza a tela imediatamente.
+             */
+
+            atualizarDashboard();
+
+
+            try {
+
+                await registrarStatus(
+                    workbookData[sIdx],
+                    [m]
+                );
+
+
+                console.log(
+                    "✅ Windows SEDUC salvo."
+                );
+
+
+            } catch (erro) {
+
+                console.error(
+                    "❌ Erro ao salvar Windows SEDUC:",
+                    erro
+                );
+
+
+                alert(
+                    "Não foi possível salvar no Firebase.\n\n" +
+                    erro.message
+                );
+
+            }
+
+        }
+
+
+
+        // ============================================================
+        // ANTIVÍRUS
+        // ============================================================
+
+        async function toggleAv(
+            sIdx,
+            mIdx
+        ) {
+
+            const m =
+                workbookData[
+                    sIdx
+                ].machines[
+                    mIdx
+                ];
+
+
+            m.antivirusInstalled =
+                !m.antivirusInstalled;
+
+
+            atualizarDashboard();
+
+
+            try {
+
+                await registrarStatus(
+                    workbookData[sIdx],
+                    [m]
+                );
+
+
+                console.log(
+                    "✅ Antivírus SEDUC salvo."
+                );
+
+
+            } catch (erro) {
+
+                console.error(
+                    "❌ Erro ao salvar antivírus SEDUC:",
+                    erro
+                );
+
+
+                alert(
+                    "Não foi possível salvar no Firebase.\n\n" +
+                    erro.message
+                );
+
+            }
+
+        }
+
+
+
+        // ============================================================
+        // CONCLUIR / RESETAR ABA
+        // ============================================================
+
+        async function marcarTudoAba(
+            status
+        ) {
+
+            if (
+                activeSheetIndex !== null &&
+                workbookData[
+                    activeSheetIndex
+                ]
+            ) {
+
+                const sheet =
+                    workbookData[
+                        activeSheetIndex
+                    ];
+
+
+                sheet.machines.forEach(
+                    m => {
+
+                        m.winUpdated =
+                            status;
+
+                        m.antivirusInstalled =
+                            status;
+
+                    }
+                );
+
+
+                atualizarDashboard();
+
+
+                try {
+
+                    await registrarStatus(
+                        sheet,
+                        sheet.machines
+                    );
+
+
+                    console.log(
+                        "✅ Aba SEDUC salva no Firebase."
+                    );
+
+
+                } catch (erro) {
+
+                    console.error(
+                        "❌ Erro ao salvar aba SEDUC:",
+                        erro
+                    );
+
+
+                    alert(
+                        "Não foi possível salvar a aba no Firebase.\n\n" +
+                        erro.message
+                    );
+                }
+
+            }
+        }
+
+
+
+        // ============================================================
+        // FECHAR DETALHES
+        // ============================================================
+
+        function fecharDetalhes() {
+
+            activeSheetIndex =
+                null;
+
+
+            document.getElementById(
+                'sectionDetails'
+            ).classList.add(
+                'hidden'
+            );
+        }
+
+
+
+        // ============================================================
+        // FILTRO
+        // ============================================================
+
+        function filtrarTabela() {
+
+            atualizarDashboard();
+        }
+
+
+
+        // ============================================================
+        // EXPORTAR EXCEL
+        // ============================================================
+
+        function exportarExcel() {
+
+            if (
+                workbookData.length === 0
+            ) {
+
+                alert(
+                    "Não há dados para exportar."
+                );
+
+                return;
+            }
+
+
+            let exportData = [];
+
+
+            workbookData.forEach(
+                sheet => {
+
+                    sheet.machines.forEach(
+                        m => {
+
+                            exportData.push({
+
+                                "Aba / Setor":
+                                    sheet.sheet_name,
+
+                                "Nome da Máquina":
+                                    m.name,
+
+                                "Windows Atualizado":
+                                    m.winUpdated
+                                        ? "Sim"
+                                        : "Não",
+
+                                "Antivírus Instalado":
+                                    m.antivirusInstalled
+                                        ? "Sim"
+                                        : "Não"
+
+                            });
+
+                        }
+                    );
+
+                }
+            );
+
+
+            const ws =
+                XLSX.utils.json_to_sheet(
+                    exportData
+                );
+
+
+            const wb =
+                XLSX.utils.book_new();
+
+
+            XLSX.utils.book_append_sheet(
+                wb,
+                ws,
+                "Status_Maquinas"
+            );
+
+
+            const pName =
+                document.getElementById(
+                    'projectName'
+                ).value.trim()
+
+                ||
+
+                "Relatorio_SEDUC_Windows_Antivirus";
+
+
+            XLSX.writeFile(
+                wb,
+                pName + ".xlsx"
+            );
+        }
+
+
+
+        // ============================================================
+        // EXPORTAR CSV
+        // ============================================================
+
+        function exportarCSV() {
+
+            if (
+                workbookData.length === 0
+            ) {
+
+                alert(
+                    "Não há dados para exportar."
+                );
+
+                return;
+            }
+
+
+            let exportData = [];
+
+
+            workbookData.forEach(
+                sheet => {
+
+                    sheet.machines.forEach(
+                        m => {
+
+                            exportData.push({
+
+                                "Aba / Setor":
+                                    sheet.sheet_name,
+
+                                "Nome da Máquina":
+                                    m.name,
+
+                                "Windows Atualizado":
+                                    m.winUpdated
+                                        ? "Sim"
+                                        : "Não",
+
+                                "Antivírus Instalado":
+                                    m.antivirusInstalled
+                                        ? "Sim"
+                                        : "Não"
+
+                            });
+
+                        }
+                    );
+
+                }
+            );
+
+
+            const ws =
+                XLSX.utils.json_to_sheet(
+                    exportData
+                );
+
+
+            const csv =
+                XLSX.utils.sheet_to_csv(
+                    ws
+                );
+
+
+            const blob =
+                new Blob(
+                    [csv],
+                    {
+                        type:
+                            'text/csv;charset=utf-8;'
+                    }
+                );
+
+
+            const link =
+                document.createElement(
+                    "a"
+                );
+
+
+            const url =
+                URL.createObjectURL(
+                    blob
+                );
+
+
+            link.setAttribute(
+                "href",
+                url
+            );
+
+
+            const pName =
+                document.getElementById(
+                    'projectName'
+                ).value.trim()
+
+                ||
+
+                "Relatorio_SEDUC_Windows_Antivirus";
+
+
+            link.setAttribute(
+                "download",
+                pName + ".csv"
+            );
+
+
+            link.click();
+
+
+            URL.revokeObjectURL(
+                url
+            );
+        }
+
+    </script>
+
+</body>
+</html>
